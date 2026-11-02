@@ -2,21 +2,115 @@
 # AI UV-VIS Spectrum Analyzer — .gitignore
 # ═══════════════════════════════════════════════════════
 
-# ── Python ──────────────────────────────────────────────
+# ── Python: Byte-compiled / optimized / DLL files ──────
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-*.egg-info/
-*.egg
 
-# Virtual environments
+# ── Python: Distribution / packaging ───────────────────
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ── Python: PyInstaller ────────────────────────────────
+*.manifest
+*.spec
+
+# ── Python: Installer logs ─────────────────────────────
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ── Python: Unit test / coverage reports ───────────────
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py.cover
+*.lcov
+.hypothesis/
+.pytest_cache/
+cover/
+
+# ── Python: Translations ──────────────────────────────
+*.mo
+*.pot
+
+# ── Python: Flask stuff ───────────────────────────────
+instance/
+.webassets-cache
+
+# ── Python: Sphinx documentation ──────────────────────
+docs/_build/
+
+# ── Python: PyBuilder ────────────────────────────────
+.pybuilder/
+target/
+
+# ── Python: Jupyter / IPython ────────────────────────
+.ipynb_checkpoints
+profile_default/
+ipython_config.py
+
+# ── Python: pdm / pixi / PEP 582 ────────────────────
+.pdm-python
+.pdm-build/
+.pixi/*
+!.pixi/config.toml
+__pypackages__/
+
+# ── Python: Celery ───────────────────────────────────
+celerybeat-schedule*
+celerybeat.pid
+
+# ── Python: Type checkers ────────────────────────────
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+.ruff_cache/
+
+# ── Python: Cython debug symbols ─────────────────────
+cython_debug/
+
+# ── Python: Misc tools ───────────────────────────────
+tempCodeRunnerFile.py
+.pypirc
+*.sage.py
+.abstra/
+marimo/_static/
+marimo/_lsp/
+__marimo__/
+
+# ── Virtual environments ────────────────────────────────
+.env
+.envrc
+.venv
 env/
 venv/
 ENV/
-.venv/
-.env
+env.bak/
+venv.bak/
 
 # ── Node / React ────────────────────────────────────────
 node_modules/
@@ -30,7 +124,6 @@ web_app/package-lock.json
 
 # ── Android / Gradle ───────────────────────────────────
 .gradle/
-build/
 app/build/
 *.apk
 *.aab
@@ -71,6 +164,7 @@ google-services.json
 .env.*
 !.env.example
 !backend/.env.example
+.streamlit/secrets.toml
 
 # ── IDE & OS ────────────────────────────────────────────
 .DS_Store
@@ -84,16 +178,23 @@ desktop.ini
 .project
 .classpath
 .settings/
+.spyderproject
+.spyproject
+.ropeproject
 
 # ── Test reports (generated / large binary files) ──────
 tests/load/reports/*.xlsx
+
+# ── Database files ─────────────────────────────────────
+db.sqlite3
+db.sqlite3-journal
+*.rdb
+*.aof
 
 # ── Miscellaneous ──────────────────────────────────────
 *.log
 *.tmp
 *.bak
 *.cache
-.pytest_cache/
-.mypy_cache/
-.coverage
-htmlcov/
+*.pid
+/site
