@@ -1,0 +1,50 @@
+name: Enterprise Mobile & Web QA Suite (350+ Tests & Excel Report)
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tests/**'
+      - 'android_app/**'
+      - 'web_app/**'
+      - 'backend/**'
+    branches: [ main ]
+
+jobs:
+  enterprise-qa-suite:
+    name: Comprehensive 350+ Test QA Automation & Release Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install Test Suite Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install openpyxl requests
+
+      - name: Execute Enterprise 350+ Test Suite (UI/UX, Functional, Unit, Validation, Deployable Gate)
+        run: |
+          python tests/appium/build_expanded_suite.py
+
+      - name: Execute Web Selenium 300-Test Suite & Excel Compiler
+        run: |
+          python tests/selenium/generate_excel_report.py
+
+      - name: Upload Comprehensive Excel Quality Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: Enterprise_350_QA_Excel_Reports
+          path: |
+            tests/appium/reports/Appium_Enterprise_350_Test_Report.xlsx
+            tests/selenium/reports/Selenium_Test_Report_300_TestCases.xlsx
+          retention-days: 30
