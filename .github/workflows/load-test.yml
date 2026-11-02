@@ -1,0 +1,60 @@
+name: Backend Baseline Load Testing & Excel Report
+
+on:
+  workflow_dispatch:
+    inputs:
+      users:
+        description: 'Number of concurrent virtual users'
+        required: false
+        default: '100'
+      duration:
+        description: 'Test duration in seconds'
+        required: false
+        default: '60'
+  push:
+    paths:
+      - 'backend/**'
+      - 'tests/load/**'
+    branches: [ main ]
+
+jobs:
+  load-test:
+    name: Baseline Load Test (100 Users / 60s)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install requests openpyxl
+
+      - name: Start Flask Backend Server
+        run: |
+          cd backend
+          python app.py &
+          sleep 5
+          curl -I http://127.0.0.1:5000/api/dashboard/stats || true
+
+      - name: Run Baseline Load Test (100 Virtual Users / 60s)
+        run: |
+          USERS="${{ github.event.inputs.users || '100' }}"
+          DURATION="${{ github.event.inputs.duration || '60' }}"
+          python tests/load/main.py --host http://127.0.0.1:5000 --users $USERS --duration $DURATION
+
+      - name: Upload Load Test Excel Report Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Load_Test_Report_100_Users
+          path: tests/load/reports/*.xlsx
+          retention-days: 30
