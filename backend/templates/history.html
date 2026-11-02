@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}History{% endblock %}
+{% block page_title %}Analysis Logs{% endblock %}
+
+{% block content %}
+<div class="card fade-in">
+    <div class="card-header" style="flex-wrap: wrap; gap: 0.75rem;">
+        <h2><i class="fas fa-history" style="color:var(--primary);margin-right:0.6rem;"></i>Historical Runs</h2>
+        <form method="GET" action="{{ url_for('history') }}"
+              style="display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-left: auto;">
+            <!-- Search -->
+            <div style="display: flex; align-items: center; border: 1px solid var(--input-border); border-radius: var(--radius-md); padding: 0.35rem 0.75rem; background: var(--input-bg);">
+                <i class="fas fa-magnifying-glass" style="color: var(--text-muted); margin-right: 0.5rem; font-size: 0.85rem;"></i>
+                <input type="text" name="search" placeholder="Filter filename..."
+                       value="{{ search }}"
+                       style="background: transparent; border: none; color: var(--text-main); outline: none; width: 150px; font-size: 0.85rem; padding: 0;">
+            </div>
+            <!-- Status Filter -->
+            <select name="status_filter"
+                    style="width: auto; padding: 0.4rem 0.75rem; font-size: 0.85rem;">
+                <option value="" {% if not status_filter %}selected{% endif %}>All Statuses</option>
+                <option value="SAFE" {% if status_filter == 'SAFE' %}selected{% endif %}>Safe</option>
+                <option value="MODERATE" {% if status_filter == 'MODERATE' %}selected{% endif %}>Moderate</option>
+                <option value="HIGH" {% if status_filter == 'HIGH' %}selected{% endif %}>High Concern</option>
+            </select>
+            <!-- Sort -->
+            <select name="sort_by"
+                    style="width: auto; padding: 0.4rem 0.75rem; font-size: 0.85rem;">
+                <option value="date_desc" {% if sort_by == 'date_desc' %}selected{% endif %}>Newest First</option>
+                <option value="date_asc" {% if sort_by == 'date_asc' %}selected{% endif %}>Oldest First</option>
+                <option value="conc_desc" {% if sort_by == 'conc_desc' %}selected{% endif %}>Concentration ↓</option>
+                <option value="conc_asc" {% if sort_by == 'conc_asc' %}selected{% endif %}>Concentration ↑</option>
+            </select>
+            <button type="submit" class="btn btn-primary" style="padding: 0.4rem 0.85rem; font-size: 0.825rem;">
+                <i class="fas fa-filter"></i> Apply
+            </button>
+            {% if search or status_filter %}
+            <a href="{{ url_for('history') }}" class="btn btn-outline" style="padding: 0.4rem 0.85rem; font-size: 0.825rem;">
+                <i class="fas fa-xmark"></i> Clear
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <div class="card-body" style="padding: 0;">
+        {% if history %}
+        <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Date &amp; Timestamp</th>
+                    <th>Filename</th>
+                    <th>λmax (nm)</th>
+                    <th>Concentration</th>
+                    <th>Confidence</th>
+                    <th>Status</th>
+                    <th style="min-width: 160px; text-align: center;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in history %}
+                <tr>
+                    <td style="white-space: nowrap; font-size: 0.8rem; color: var(--text-muted);">{{ item.timestamp }}</td>
+                    <td><strong style="font-size: 0.875rem; color: var(--text-main);">{{ item.filename }}</strong></td>
+                    <td>{{ item.peak_wavelength or '—' }} nm</td>
+                    <td><strong>{{ item.predicted_concentration or '—' }} ppm</strong></td>
+                    <td>
+                        {% if item.confidence_score is defined and item.confidence_score %}
+                        <span style="font-weight:700; color: {% if item.confidence_score >= 75 %}var(--success){% elif item.confidence_score >= 50 %}var(--warning){% else %}var(--danger){% endif %};">
+                            {{ item.confidence_score }}%
+                        </span>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>
+                        <span style="font-weight: 700; font-size: 0.775rem; padding: 0.25rem 0.65rem; border-radius: var(--radius-sm); display: inline-flex; align-items: center; gap: 0.35rem;
+                                     color: {% if item.status == 'HIGH' %}var(--danger){% elif item.status == 'SAFE' %}var(--success){% elif item.status == 'MODERATE' %}var(--warning){% else %}inherit{% endif %};
+                                     background: {% if item.status == 'HIGH' %}rgba(239,68,68,0.15){% elif item.status == 'SAFE' %}rgba(16,185,129,0.15){% elif item.status == 'MODERATE' %}rgba(245,158,11,0.15){% else %}transparent{% endif %};">
+                            {{ item.status }}
+                        </span>
+                    </td>
+                    <td style="text-align: center;">
+                        <div style="display: flex; gap: 0.4rem; justify-content: center;">
+                            <a href="{{ url_for('view_report', report_id=item.id) }}" target="_blank"
+                               class="icon-btn" title="View PDF Report">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{{ url_for('download_report', report_id=item.id) }}"
+                               class="icon-btn" title="Download PDF Report" style="color: var(--primary);">
+                                <i class="fas fa-file-pdf"></i>
+                            </a>
+                            <a href="{{ url_for('download_csv', report_id=item.id) }}"
+                               class="icon-btn" title="Export CSV Data">
+                                <i class="fas fa-file-csv"></i>
+                            </a>
+                            <form action="{{ url_for('delete_history', entry_id=item.id) }}" method="POST"
+                                  style="display: inline;"
+                                  onsubmit="return confirm('Delete this record?')">
+                                <button type="submit" class="icon-btn"
+                                        style="color: var(--danger); background: rgba(239,68,68,0.1);"
+                                        title="Delete Log">
+                                    <i class="fas fa-trash-can"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <h3 style="font-family:var(--font-heading); color:var(--text-main); font-size:1.1rem;">No Records Found</h3>
+            <p style="font-size:0.875rem;">
+                {% if search or status_filter %}
+                    No analysis logs match current filters. <a href="{{ url_for('history') }}" style="color:var(--primary);">Clear filters</a>.
+                {% else %}
+                    Upload a spectral CSV on the Dashboard to build history.
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

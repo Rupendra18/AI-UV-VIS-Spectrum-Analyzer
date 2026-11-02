@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI UV-Vis Spectrum Analyzer - Initializing</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #070a12;
+            color: #f8fafc;
+        }
+
+        /* Particle Canvas */
+        #particle-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Ambient Glow Background Orbs */
+        .ambient-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.45;
+            z-index: 2;
+            animation: pulseOrb 6s infinite ease-in-out alternate;
+        }
+        .orb-1 {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.6), transparent 70%);
+            top: -100px; left: -100px;
+        }
+        .orb-2 {
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.5), transparent 70%);
+            bottom: -150px; right: -150px;
+            animation-delay: -3s;
+        }
+        .orb-3 {
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.4), transparent 70%);
+            top: 40%; left: 60%;
+            animation-delay: -1.5s;
+        }
+
+        @keyframes pulseOrb {
+            0% { transform: scale(1) translate(0, 0); opacity: 0.35; }
+            100% { transform: scale(1.15) translate(30px, -20px); opacity: 0.55; }
+        }
+
+        /* Splash Screen Overlay Container */
+        .splash-wrapper {
+            position: relative;
+            z-index: 10;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .splash-card {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 28px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(59, 130, 246, 0.2);
+            padding: 3.5rem 3rem;
+            width: 100%;
+            max-width: 520px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            animation: cardEntrance 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes cardEntrance {
+            from { opacity: 0; transform: translateY(30px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Emblem / Logo Container */
+        .logo-emblem {
+            width: 110px;
+            height: 110px;
+            border-radius: 28px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.25));
+            border: 1.5px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 2rem;
+            position: relative;
+            box-shadow: 0 0 35px rgba(59, 130, 246, 0.4), inset 0 0 25px rgba(139, 92, 246, 0.3);
+            animation: emblemPulse 3s infinite ease-in-out;
+        }
+
+        @keyframes emblemPulse {
+            0%, 100% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.35), inset 0 0 20px rgba(139, 92, 246, 0.25); transform: scale(1); }
+            50% { box-shadow: 0 0 50px rgba(59, 130, 246, 0.65), inset 0 0 30px rgba(6, 182, 212, 0.4); transform: scale(1.04); }
+        }
+
+        /* Integrated Circuit Pattern Background SVG */
+        .circuit-bg {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        /* Laboratory Flask & Spectrum Wave Graphic */
+        .flask-svg {
+            width: 58px;
+            height: 58px;
+            z-index: 2;
+            filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.8));
+        }
+
+        /* Titles */
+        .splash-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.85rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #ffffff 30%, #a5f3fc 70%, #c084fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            line-height: 1.2;
+        }
+
+        .splash-subtitle {
+            font-size: 0.875rem;
+            color: #94a3b8;
+            font-weight: 500;
+            margin-bottom: 2.5rem;
+            max-width: 380px;
+            line-height: 1.5;
+        }
+
+        /* SVG Spectrum Wave Indicator */
+        .spectrum-wave-box {
+            width: 100%;
+            height: 36px;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .spectrum-wave-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .wave-path {
+            stroke-dasharray: 600;
+            stroke-dashoffset: 600;
+            animation: drawWave 3s infinite linear;
+        }
+
+        @keyframes drawWave {
+            0% { stroke-dashoffset: 600; }
+            100% { stroke-dashoffset: 0; }
+        }
+
+        /* Progress Bar & Status */
+        .progress-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.825rem;
+        }
+
+        .status-text {
+            color: #38bdf8;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-text i {
+            font-size: 0.75rem;
+            animation: spin 1.2s infinite linear;
+        }
+
+        .percentage-text {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            color: #f8fafc;
+            font-size: 0.95rem;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 999px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #3b82f6, #06b6d4, #8b5cf6);
+            border-radius: 999px;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.8);
+            transition: width 0.15s ease-out;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .splash-card { padding: 2.5rem 1.5rem; }
+            .splash-title { font-size: 1.5rem; }
+            .splash-subtitle { font-size: 0.8rem; }
+            .logo-emblem { width: 90px; height: 90px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Particle Canvas -->
+    <canvas id="particle-canvas"></canvas>
+
+    <!-- Glowing Background Orbs -->
+    <div class="ambient-orb orb-1"></div>
+    <div class="ambient-orb orb-2"></div>
+    <div class="ambient-orb orb-3"></div>
+
+    <!-- Splash Content -->
+    <div class="splash-wrapper" id="splash-wrapper">
+        <div class="splash-card">
+            
+            <!-- Emblem with Flask, Circuit Pattern & Spectrum Glow -->
+            <div class="logo-emblem">
+                <!-- AI Circuit Paths overlay -->
+                <svg class="circuit-bg" viewBox="0 0 100 100" fill="none">
+                    <circle cx="50" cy="50" r="45" stroke="rgba(59, 130, 246, 0.2)" stroke-width="1" stroke-dasharray="4 4"/>
+                    <circle cx="50" cy="50" r="32" stroke="rgba(139, 92, 246, 0.25)" stroke-width="1"/>
+                    <path d="M50 5 L50 18 M50 82 L50 95 M5 50 L18 50 M82 50 L95 50" stroke="rgba(6, 182, 212, 0.4)" stroke-width="1.5"/>
+                    <circle cx="50" cy="18" r="2" fill="#38bdf8"/>
+                    <circle cx="50" cy="82" r="2" fill="#8b5cf6"/>
+                    <circle cx="18" cy="50" r="2" fill="#3b82f6"/>
+                    <circle cx="82" cy="50" r="2" fill="#06b6d4"/>
+                </svg>
+
+                <!-- Flask & Wave SVG Icon -->
+                <svg class="flask-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M26 8h12v10l15.5 27.5c1.8 3.2.4 7.2-3 8.8-1 .5-2.2.7-3.3.7H16.8c-3.7 0-6.8-3-6.8-6.7 0-1.2.3-2.3.9-3.3L26 18V8z"
+                          stroke="url(#flask-grad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M22 8h20" stroke="url(#flask-grad)" stroke-width="2.5" stroke-linecap="round"/>
+                    <!-- Liquid in flask -->
+                    <path d="M14.5 45.5l7.5-13.3c.7-1.2 2-2 3.4-2h13.2c1.4 0 2.7.8 3.4 2l7.5 13.3c.9 1.6.3 3.6-1.3 4.5-.5.3-1.1.5-1.7.5H17.5c-1.9 0-3.5-1.6-3.5-3.5 0-.6.2-1.2.5-1.5z"
+                          fill="url(#liquid-grad)" opacity="0.75"/>
+                    <circle cx="28" cy="38" r="1.5" fill="#a5f3fc"/>
+                    <circle cx="36" cy="42" r="2" fill="#c084fc"/>
+                    <defs>
+                        <linearGradient id="flask-grad" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#38bdf8"/>
+                            <stop offset="0.5" stop-color="#3b82f6"/>
+                            <stop offset="1" stop-color="#8b5cf6"/>
+                        </linearGradient>
+                        <linearGradient id="liquid-grad" x1="14" y1="30" x2="50" y2="50" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#06b6d4"/>
+                            <stop offset="1" stop-color="#8b5cf6"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+
+            <!-- Title & Subtitle -->
+            <h1 class="splash-title">AI UV-Vis Spectrum Analyzer</h1>
+            <p class="splash-subtitle">Artificial Intelligence Based Spectroscopic Analysis System</p>
+
+            <!-- Animated UV-Vis Spectrum Wave SVG -->
+            <div class="spectrum-wave-box">
+                <svg class="spectrum-wave-svg" viewBox="0 0 300 40" fill="none">
+                    <path class="wave-path" d="M 0 20 Q 25 5, 50 20 T 100 20 T 150 20 T 200 20 T 250 20 T 300 20"
+                          stroke="url(#wave-grad)" stroke-width="2.5" fill="none"/>
+                    <defs>
+                        <linearGradient id="wave-grad" x1="0" y1="0" x2="300" y2="0" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#38bdf8"/>
+                            <stop offset="0.33" stop-color="#3b82f6"/>
+                            <stop offset="0.66" stop-color="#8b5cf6"/>
+                            <stop offset="1" stop-color="#06b6d4"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+
+            <!-- Loading Section -->
+            <div class="progress-container">
+                <div class="progress-header">
+                    <span class="status-text" id="status-text">
+                        <i class="fas fa-circle-notch"></i> <span id="status-label">Initializing AI Engine...</span>
+                    </span>
+                    <span class="percentage-text" id="percentage-text">0%</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-bar-fill" id="progress-fill"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Script for Particle Canvas & Loading Animation -->
+    <script>
+        // ── 1. Floating Particle Canvas Background ─────────────────────────
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        const particles = [];
+        const particleCount = 45;
+        const colors = ['#38bdf8', '#3b82f6', '#8b5cf6', '#06b6d4'];
+
+        for (let i = 0; i < particleCount; i++) {
+            particles.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                radius: Math.random() * 2.5 + 1,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                vx: (Math.random() - 0.5) * 0.4,
+                vy: (Math.random() - 0.5) * 0.4,
+                alpha: Math.random() * 0.6 + 0.2
+            });
+        }
+
+        function renderParticles() {
+            ctx.clearRect(0, 0, width, height);
+
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0) p.x = width;
+                if (p.x > width) p.x = 0;
+                if (p.y < 0) p.y = height;
+                if (p.y > height) p.y = 0;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.alpha;
+                ctx.shadowBlur = 12;
+                ctx.shadowColor = p.color;
+                ctx.fill();
+            });
+
+            requestAnimationFrame(renderParticles);
+        }
+        renderParticles();
+
+        // ── 2. Loading Progress & Dynamic Text Sequence ──────────────────
+        const progressFill = document.getElementById('progress-fill');
+        const percentageText = document.getElementById('percentage-text');
+        const statusLabel = document.getElementById('status-label');
+        const wrapper = document.getElementById('splash-wrapper');
+
+        const stages = [
+            { text: 'Initializing AI Engine...', targetPct: 25, duration: 700 },
+            { text: 'Loading Machine Learning Model...', targetPct: 55, duration: 900 },
+            { text: 'Connecting Firebase...', targetPct: 80, duration: 800 },
+            { text: 'Preparing Dashboard...', targetPct: 95, duration: 600 },
+            { text: 'Ready', targetPct: 100, duration: 500 }
+        ];
+
+        let currentStage = 0;
+        let currentPct = 0;
+
+        function runSplashSequence() {
+            if (currentStage >= stages.length) {
+                // Fade out splash and redirect to login page
+                setTimeout(() => {
+                    wrapper.style.opacity = '0';
+                    wrapper.style.transform = 'scale(0.96)';
+                    setTimeout(() => {
+                        window.location.href = "{{ url_for('login') }}";
+                    }, 500);
+                }, 300);
+                return;
+            }
+
+            const stage = stages[currentStage];
+            statusLabel.textContent = stage.text;
+            
+            const startPct = currentPct;
+            const targetPct = stage.targetPct;
+            const startTime = performance.now();
+
+            function animateProgress(now) {
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / stage.duration, 1);
+                currentPct = Math.floor(startPct + (targetPct - startPct) * progress);
+
+                progressFill.style.width = currentPct + '%';
+                percentageText.textContent = currentPct + '%';
+
+                if (progress < 1) {
+                    requestAnimationFrame(animateProgress);
+                } else {
+                    currentStage++;
+                    setTimeout(runSplashSequence, 100);
+                }
+            }
+
+            requestAnimationFrame(animateProgress);
+        }
+
+        // Start splash sequence on load
+        window.addEventListener('load', () => {
+            setTimeout(runSplashSequence, 200);
+        });
+    </script>
+</body>
+</html>

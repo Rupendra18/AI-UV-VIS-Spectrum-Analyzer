@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI UV-Vis Spectrum Analyzer - Register</title>
+    <meta name="description" content="Create an account for the AI UV-Vis Spectrum Analyzer.">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="login-body">
+    <div class="login-container" style="max-width: 460px;">
+        <div class="login-box">
+            <div class="login-header">
+                <div class="logo-icon">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 12h4l3-9 5 18 3-9h3" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h2>Create Account</h2>
+                <p>Register to start analysing UV-Vis spectra.</p>
+            </div>
+
+            <div id="alert-container" style="display:none; margin-bottom: 1.5rem;">
+                <div id="alert-box" style="padding: 0.75rem 1rem; border-radius: 0.5rem; display: flex; align-items: center; gap: 0.75rem; font-size: 0.875rem;">
+                    <i id="alert-icon" class="fas"></i>
+                    <span id="alert-text"></span>
+                </div>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div style="margin-bottom: 1.5rem;">
+                {% for category, message in messages %}
+                <div style="padding: 0.75rem 1rem; border-radius: 0.5rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.75rem; font-size: 0.875rem;
+                    {% if category == 'success' %}background-color: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); color: var(--success);{% else %}background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: var(--danger);{% endif %}">
+                    <i class="fas {% if category == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %}"></i>
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            {% if firebase_configured %}
+            <form id="register-form" class="login-form" novalidate>
+            {% else %}
+            <form action="{{ url_for('register') }}" method="POST" class="login-form">
+            {% endif %}
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" placeholder="Dr. Jane Doe" required autocomplete="name">
+                </div>
+                <div class="form-group">
+                    <label for="org_name">Organization</label>
+                    <input type="text" id="org_name" name="org_name" placeholder="My Laboratory" required autocomplete="organization">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" placeholder="Enter your email" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Minimum 6 characters" required autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" placeholder="••••••••" required autocomplete="new-password">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block" id="register-btn">
+                    <span id="register-text">Create Account</span>
+                    <span id="register-spinner" style="display:none;"><i class="fas fa-spinner fa-spin"></i></span>
+                </button>
+            </form>
+
+            <div class="login-footer">
+                <p>Already have an account? <a href="{{ url_for('login') }}">Sign in</a></p>
+            </div>
+        </div>
+    </div>
+
+    {% if firebase_configured %}
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="{{ url_for('static', filename='js/firebase-config.js') }}"></script>
+    <script>
+        function showAlert(message, type) {
+            const container = document.getElementById('alert-container');
+            const box = document.getElementById('alert-box');
+            const icon = document.getElementById('alert-icon');
+            const text = document.getElementById('alert-text');
+            text.textContent = message;
+            container.style.display = 'block';
+            if (type === 'success') {
+                box.style.cssText = 'padding:0.75rem 1rem;border-radius:0.5rem;display:flex;align-items:center;gap:0.75rem;font-size:0.875rem;background-color:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:var(--success)';
+                icon.className = 'fas fa-check-circle';
+            } else {
+                box.style.cssText = 'padding:0.75rem 1rem;border-radius:0.5rem;display:flex;align-items:center;gap:0.75rem;font-size:0.875rem;background-color:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--danger)';
+                icon.className = 'fas fa-exclamation-circle';
+            }
+        }
+
+        function setLoading(loading) {
+            document.getElementById('register-text').style.display = loading ? 'none' : 'inline';
+            document.getElementById('register-spinner').style.display = loading ? 'inline' : 'none';
+            document.getElementById('register-btn').disabled = loading;
+        }
+
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value.trim();
+            const org = document.getElementById('org_name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('confirm_password').value;
+
+            if (!name || !org || !email || !password) {
+                showAlert('All fields are required.', 'danger'); return;
+            }
+            if (password !== confirm) {
+                showAlert('Passwords do not match.', 'danger'); return;
+            }
+            if (password.length < 6) {
+                showAlert('Password must be at least 6 characters.', 'danger'); return;
+            }
+
+            setLoading(true);
+            try {
+                const userCred = await firebase.auth().createUserWithEmailAndPassword(email, password);
+                await userCred.user.updateProfile({displayName: name});
+                const idToken = await userCred.user.getIdToken();
+                const resp = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({idToken, name, org_name: org})
+                });
+                const data = await resp.json();
+                if (resp.ok && data.status === 'ok') {
+                    window.location.href = '/dashboard';
+                } else {
+                    throw new Error(data.error || 'Server error');
+                }
+            } catch (err) {
+                setLoading(false);
+                let msg = err.message || 'Registration failed.';
+                if (msg.includes('email-already-in-use')) {
+                    msg = 'This email is already registered. Please sign in instead.';
+                } else if (msg.includes('invalid-email')) {
+                    msg = 'Please enter a valid email address.';
+                } else if (msg.includes('weak-password')) {
+                    msg = 'Password is too weak. Use at least 6 characters.';
+                }
+                showAlert(msg, 'danger');
+            }
+        });
+    </script>
+    {% endif %}
+</body>
+</html>

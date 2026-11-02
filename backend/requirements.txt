@@ -1,0 +1,11 @@
+Flask==3.0.3
+pandas
+werkzeug
+plotly
+firebase-admin
+reportlab
+scikit-learn
+joblib
+flask-cors
+PyJWT
+python-dotenv

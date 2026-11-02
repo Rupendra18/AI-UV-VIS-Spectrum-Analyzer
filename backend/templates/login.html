@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI UV-Vis Spectrum Analyzer - Login</title>
+    <meta name="description" content="Sign in to the AI UV-Vis Spectrum Analyzer to analyze UV-Vis spectra.">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="login-body">
+    <div class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <div class="logo-icon">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 12h4l3-9 5 18 3-9h3" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h2>AI Spectrum Analyzer</h2>
+                <p>Welcome back! Please sign in to continue.</p>
+            </div>
+
+            <!-- Flash messages (for non-Firebase fallback) -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div style="margin-bottom: 1.5rem;">
+                {% for category, message in messages %}
+                <div style="padding: 0.75rem 1rem; border-radius: 0.5rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.75rem; font-size: 0.875rem;
+                    {% if category == 'success' %}background-color: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); color: var(--success);{% else %}background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: var(--danger);{% endif %}">
+                    <i class="fas {% if category == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %}"></i>
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <!-- JS alert container -->
+            <div id="alert-container" style="display:none; margin-bottom: 1.5rem;">
+                <div id="alert-box" style="padding: 0.75rem 1rem; border-radius: 0.5rem; display: flex; align-items: center; gap: 0.75rem; font-size: 0.875rem;">
+                    <i id="alert-icon" class="fas"></i>
+                    <span id="alert-text"></span>
+                </div>
+            </div>
+
+            {% if firebase_configured %}
+            <!-- Firebase Auth Login Form -->
+            <form id="login-form" class="login-form" novalidate>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" placeholder="Enter your email" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div style="position: relative;">
+                        <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+                        <button type="button" id="toggle-pass" onclick="togglePassword()" style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;padding:0;">
+                            <i class="fas fa-eye" id="eye-icon"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-options">
+                    <label class="remember-me">
+                        <input type="checkbox" name="remember">
+                        <span>Remember me</span>
+                    </label>
+                    <a href="{{ url_for('forgot_password') }}" class="forgot-password">Forgot password?</a>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block" id="login-btn">
+                    <span id="login-text">Sign in</span>
+                    <span id="login-spinner" style="display:none;"><i class="fas fa-spinner fa-spin"></i></span>
+                </button>
+            </form>
+            {% else %}
+            <!-- Local Auth Fallback Form -->
+            <form action="{{ url_for('login') }}" method="POST" class="login-form">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="••••••••" required>
+                </div>
+                <div class="form-options">
+                    <label class="remember-me">
+                        <input type="checkbox" name="remember">
+                        <span>Remember me</span>
+                    </label>
+                    <a href="{{ url_for('forgot_password') }}" class="forgot-password">Forgot password?</a>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+            </form>
+            {% endif %}
+
+            <div class="login-footer">
+                <p>Don't have an account? <a href="{{ url_for('register') }}">Create Account</a></p>
+                {% if not firebase_configured %}
+                <p style="margin-top:0.75rem;font-size:0.75rem;color:var(--warning);">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Running in local mode. <a href="{{ url_for('firebase_setup') }}" style="color:var(--warning);">Configure Firebase</a> for full features.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if firebase_configured %}
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="{{ url_for('static', filename='js/firebase-config.js') }}"></script>
+    <script>
+        function showAlert(message, type) {
+            const container = document.getElementById('alert-container');
+            const box = document.getElementById('alert-box');
+            const icon = document.getElementById('alert-icon');
+            const text = document.getElementById('alert-text');
+            text.textContent = message;
+            container.style.display = 'block';
+            if (type === 'success') {
+                box.style.cssText = 'padding:0.75rem 1rem;border-radius:0.5rem;display:flex;align-items:center;gap:0.75rem;font-size:0.875rem;background-color:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:var(--success)';
+                icon.className = 'fas fa-check-circle';
+            } else {
+                box.style.cssText = 'padding:0.75rem 1rem;border-radius:0.5rem;display:flex;align-items:center;gap:0.75rem;font-size:0.875rem;background-color:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--danger)';
+                icon.className = 'fas fa-exclamation-circle';
+            }
+        }
+
+        function togglePassword() {
+            const pw = document.getElementById('password');
+            const icon = document.getElementById('eye-icon');
+            if (pw.type === 'password') {
+                pw.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                pw.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        }
+
+        function setLoading(loading) {
+            document.getElementById('login-text').style.display = loading ? 'none' : 'inline';
+            document.getElementById('login-spinner').style.display = loading ? 'inline' : 'none';
+            document.getElementById('login-btn').disabled = loading;
+        }
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            if (!email || !password) {
+                showAlert('Please fill in all fields.', 'danger');
+                return;
+            }
+            setLoading(true);
+            try {
+                const userCred = await firebase.auth().signInWithEmailAndPassword(email, password);
+                const idToken = await userCred.user.getIdToken();
+                const resp = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({idToken})
+                });
+                const data = await resp.json();
+                if (resp.ok && data.status === 'ok') {
+                    window.location.href = '/dashboard';
+                } else {
+                    throw new Error(data.error || 'Server error');
+                }
+            } catch (err) {
+                setLoading(false);
+                let msg = err.message || 'Login failed.';
+                if (msg.includes('user-not-found') || msg.includes('wrong-password') || msg.includes('invalid-credential')) {
+                    msg = 'Invalid email or password.';
+                } else if (msg.includes('too-many-requests')) {
+                    msg = 'Too many failed attempts. Please try again later.';
+                } else if (msg.includes('invalid-email')) {
+                    msg = 'Please enter a valid email address.';
+                }
+                showAlert(msg, 'danger');
+            }
+        });
+    </script>
+    {% endif %}
+</body>
+</html>

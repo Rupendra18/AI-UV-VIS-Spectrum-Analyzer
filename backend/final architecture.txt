@@ -1,0 +1,208 @@
+inal Architecture (Web + Android + Backend + AI + Firebase)
+AI_UV_VIS_SPECTRUM_ANALYZER/
+│
+├── backend/                                 # Flask Backend + AI
+│   │
+│   ├── app.py
+│   ├── requirements.txt
+│   ├── config.py
+│   ├── .env
+│   ├── README.md
+│   │
+│   ├── api/
+│   │   ├── auth.py
+│   │   ├── upload.py
+│   │   ├── prediction.py
+│   │   ├── reports.py
+│   │   ├── history.py
+│   │   ├── settings.py
+│   │   └── profile.py
+│   │
+│   ├── ai/
+│   │   ├── predictor.py
+│   │   ├── train_model.py
+│   │   ├── preprocessing.py
+│   │   ├── dataset.csv
+│   │   ├── model.pkl
+│   │   ├── scaler.pkl
+│   │   └── metrics.json
+│   │
+│   ├── services/
+│   │   ├── firebase_service.py
+│   │   ├── prediction_service.py
+│   │   ├── graph_service.py
+│   │   ├── report_service.py
+│   │   ├── auth_service.py
+│   │   └── history_service.py
+│   │
+│   ├── utils/
+│   │   ├── firebase.py
+│   │   ├── graph.py
+│   │   ├── pdf.py
+│   │   ├── validation.py
+│   │   └── helpers.py
+│   │
+│   ├── uploads/
+│   ├── reports/
+│   ├── logs/
+│   ├── static/
+│   └── templates/
+│
+│
+├── web_app/                                # React.js Application
+│   │
+│   ├── public/
+│   │   ├── favicon.ico
+│   │   ├── logo.png
+│   │   └── manifest.json
+│   │
+│   ├── src/
+│   │
+│   ├── assets/
+│   │   ├── icons/
+│   │   ├── images/
+│   │   ├── fonts/
+│   │   └── animations/
+│   │
+│   ├── components/
+│   │   ├── Navbar/
+│   │   ├── Sidebar/
+│   │   ├── GlassCard/
+│   │   ├── SpectrumChart/
+│   │   ├── UploadCard/
+│   │   ├── Loading/
+│   │   ├── Notification/
+│   │   └── Footer/
+│   │
+│   ├── pages/
+│   │   ├── Splash/
+│   │   ├── Login/
+│   │   ├── Register/
+│   │   ├── ForgotPassword/
+│   │   ├── Dashboard/
+│   │   ├── Upload/
+│   │   ├── Analysis/
+│   │   ├── Reports/
+│   │   ├── History/
+│   │   ├── Settings/
+│   │   ├── Profile/
+│   │   └── About/
+│   │
+│   ├── services/
+│   │   ├── api.js
+│   │   ├── auth.js
+│   │   ├── firebase.js
+│   │   └── storage.js
+│   │
+│   ├── hooks/
+│   ├── context/
+│   ├── routes/
+│   ├── styles/
+│   ├── utils/
+│   ├── App.jsx
+│   ├── main.jsx
+│   ├── package.json
+│   └── vite.config.js
+│
+│
+├── android_app/                            # Kotlin Android Application
+│   │
+│   ├── app/
+│   │
+│   ├── java/
+│   │   ├── activities/
+│   │   ├── fragments/
+│   │   ├── adapters/
+│   │   ├── repository/
+│   │   ├── network/
+│   │   ├── firebase/
+│   │   ├── models/
+│   │   ├── utils/
+│   │   ├── viewmodel/
+│   │   └── services/
+│   │
+│   ├── res/
+│   │   ├── drawable/
+│   │   ├── layout/
+│   │   ├── values/
+│   │   ├── mipmap/
+│   │   └── anim/
+│   │
+│   ├── google-services.json
+│   ├── build.gradle
+│   └── AndroidManifest.xml
+│
+│
+├── firebase/
+│   ├── firestore.rules
+│   ├── firestore.indexes.json
+│   ├── storage.rules
+│   ├── firebase.json
+│   └── serviceAccountKey.json
+│
+│
+├── datasets/
+│   ├── raw/
+│   ├── processed/
+│   ├── trained/
+│   └── research_papers/
+│
+│
+├── deployment/
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   ├── nginx.conf
+│   ├── render.yaml
+│   └── README.md
+│
+│
+├── docs/
+│   ├── Project_Report.pdf
+│   ├── SRS.pdf
+│   ├── API_Documentation.pdf
+│   ├── User_Manual.pdf
+│   ├── Architecture.pdf
+│   └── Screenshots/
+│
+│
+├── tests/
+│   ├── backend/
+│   ├── web/
+│   ├── android/
+│   └── ai/
+│
+│
+├── README.md
+├── LICENSE
+└── .gitignore
+Complete System Architecture
+                     ┌───────────────────────────────┐
+                     │        React.js Web App       │
+                     │  (Glass UI + Plotly Charts)   │
+                     └──────────────┬────────────────┘
+                                    │
+                                    │ REST API (HTTPS)
+                                    │
+                     ┌──────────────▼────────────────┐
+                     │       Flask Backend API       │
+                     │ Authentication • AI • Reports │
+                     └──────────────┬────────────────┘
+                                    │
+                     ┌──────────────▼────────────────┐
+                     │    AI Prediction Engine       │
+                     │ Random Forest / ML Model      │
+                     │ Feature Extraction            │
+                     └──────────────┬────────────────┘
+                                    │
+          ┌─────────────────────────┼─────────────────────────┐
+          │                         │                         │
+          ▼                         ▼                         ▼
+  Firebase Authentication   Cloud Firestore        Firebase Storage
+          │                         │                         │
+          └─────────────────────────┼─────────────────────────┘
+                                    │
+                     ┌──────────────▼────────────────┐
+                     │     Kotlin Android App        │
+                     │ Upload • Graph • Reports      │
+                     │ History • Profile • Settings  │
+                     └───────────────────────────────┘

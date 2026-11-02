@@ -1,0 +1,236 @@
+[
+  {
+    "path": "/",
+    "method": "GET",
+    "access": "public",
+    "description": "Login page / splash redirect"
+  },
+  {
+    "path": "/login",
+    "method": "GET",
+    "access": "public",
+    "description": "Login page"
+  },
+  {
+    "path": "/login",
+    "method": "POST",
+    "access": "public",
+    "description": "Login form submit"
+  },
+  {
+    "path": "/register",
+    "method": "GET",
+    "access": "public",
+    "description": "Register page"
+  },
+  {
+    "path": "/register",
+    "method": "POST",
+    "access": "public",
+    "description": "Register form submit"
+  },
+  {
+    "path": "/splash",
+    "method": "GET",
+    "access": "public",
+    "description": "Splash screen"
+  },
+  {
+    "path": "/forgot-password",
+    "method": "GET",
+    "access": "public",
+    "description": "Forgot password page"
+  },
+  {
+    "path": "/firebase-setup",
+    "method": "GET",
+    "access": "public",
+    "description": "Firebase setup page"
+  },
+  {
+    "path": "/logout",
+    "method": "GET",
+    "access": "requires-auth",
+    "description": "Logout"
+  },
+  {
+    "path": "/dashboard",
+    "method": "GET",
+    "access": "requires-auth",
+    "description": "Dashboard"
+  },
+  {
+    "path": "/upload",
+    "method": "POST",
+    "access": "requires-auth",
+    "description": "Upload CSV file"
+  },
+  {
+    "path": "/reports",
+    "method": "GET",
+    "access": "requires-auth",
+    "description": "Reports list"
+  },
+  {
+    "path": "/report/delete/<report_id>",
+    "method": "POST",
+    "access": "requires-auth",
+    "description": "Delete report"
+  },
+  {
+    "path": "/report/download/<report_id>",
+    "method": "GET",
+    "access": "requires-auth",
+    "description": "Download PDF report"
+  },
+  {
+    "path": "/report/view/<report_id>",
+    "method": "GET",
+    "access": "requires-auth",
+    "description": "View PDF inline"
+  },
+  {
+    "path": "/download/csv/<report_id>",
+    "method": "GET",
+    "access": "requires-auth",
+    "description": "Download CSV summary"
+  },
+  {
+    "path": "/history",
+    "method": "GET",
+    "access": "requires-auth",
+    "description": "Analysis history"
+  },
+  {
+    "path": "/history/delete/<entry_id>",
+    "method": "POST",
+    "access": "requires-auth",
+    "description": "Delete history entry"
+  },
+  {
+    "path": "/settings",
+    "method": "GET",
+    "access": "requires-auth",
+    "description": "Settings page"
+  },
+  {
+    "path": "/settings",
+    "method": "POST",
+    "access": "requires-auth",
+    "description": "Save settings"
+  },
+  {
+    "path": "/api/login",
+    "method": "POST",
+    "access": "public",
+    "description": "Firebase session login"
+  },
+  {
+    "path": "/api/register",
+    "method": "POST",
+    "access": "public",
+    "description": "Firebase register"
+  },
+  {
+    "path": "/api/auth/register",
+    "method": "POST",
+    "access": "public",
+    "description": "REST register (local/Firebase)"
+  },
+  {
+    "path": "/api/auth/login",
+    "method": "POST",
+    "access": "public",
+    "description": "REST login (local/Firebase)"
+  },
+  {
+    "path": "/api/auth/logout",
+    "method": "POST",
+    "access": "requires-auth",
+    "description": "REST logout"
+  },
+  {
+    "path": "/api/auth/profile",
+    "method": "GET",
+    "access": "requires-auth",
+    "description": "Get user profile"
+  },
+  {
+    "path": "/api/auth/profile",
+    "method": "PUT",
+    "access": "requires-auth",
+    "description": "Update user profile"
+  },
+  {
+    "path": "/api/dashboard/stats",
+    "method": "GET",
+    "access": "public-leaks-data",
+    "description": "Dashboard KPI stats (guest fallback exposes all data)"
+  },
+  {
+    "path": "/api/upload",
+    "method": "POST",
+    "access": "public-leaks-data",
+    "description": "Upload & analyse CSV (no auth enforced \u2014 uses guest UID)"
+  },
+  {
+    "path": "/api/predict",
+    "method": "POST",
+    "access": "public-leaks-data",
+    "description": "Inline JSON prediction (no auth enforced)"
+  },
+  {
+    "path": "/api/history",
+    "method": "GET",
+    "access": "public-leaks-data",
+    "description": "Analysis history (guest gets all records)"
+  },
+  {
+    "path": "/api/history/<id>",
+    "method": "DELETE",
+    "access": "requires-auth",
+    "description": "Delete history entry"
+  },
+  {
+    "path": "/api/reports",
+    "method": "GET",
+    "access": "public-leaks-data",
+    "description": "Reports list (guest gets all records)"
+  },
+  {
+    "path": "/api/reports/<id>/pdf",
+    "method": "GET",
+    "access": "public-leaks-data",
+    "description": "Download PDF (guest fallback)"
+  },
+  {
+    "path": "/api/reports/<id>/csv",
+    "method": "GET",
+    "access": "public-leaks-data",
+    "description": "Download CSV (guest fallback)"
+  },
+  {
+    "path": "/api/settings",
+    "method": "GET",
+    "access": "public-leaks-data",
+    "description": "Get settings (guest fallback)"
+  },
+  {
+    "path": "/api/settings",
+    "method": "POST",
+    "access": "public-leaks-data",
+    "description": "Save settings (no auth enforced)"
+  },
+  {
+    "path": "/api/notifications",
+    "method": "GET",
+    "access": "public-leaks-data",
+    "description": "Notifications (guest gets all high-risk alerts)"
+  },
+  {
+    "path": "/api/model/info",
+    "method": "GET",
+    "access": "public",
+    "description": "ML model info/metrics"
+  }
+]

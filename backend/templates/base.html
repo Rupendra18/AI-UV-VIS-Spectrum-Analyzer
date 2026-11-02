@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI UV-Vis Spectrum Analyzer - {% block title %}{% endblock %}</title>
+    
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Plotly JS -->
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+    
+    {% if firebase_configured is defined and firebase_configured %}
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="{{ url_for('static', filename='js/firebase-config.js') }}"></script>
+    {% endif %}
+</head>
+
+<body class="app-body">
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-glow-icon">
+                    <i class="fas fa-wave-square"></i>
+                </div>
+                <span>AI Spectrum</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <ul>
+                <li class="{% if active_page == 'dashboard' %}active{% endif %}">
+                    <a href="{{ url_for('dashboard') }}" id="nav-dashboard">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="{% if active_page == 'reports' %}active{% endif %}">
+                    <a href="{{ url_for('reports') }}" id="nav-reports">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Reports</span>
+                    </a>
+                </li>
+                <li class="{% if active_page == 'history' %}active{% endif %}">
+                    <a href="{{ url_for('history') }}" id="nav-history">
+                        <i class="fas fa-history"></i>
+                        <span>History</span>
+                    </a>
+                </li>
+                <li class="{% if active_page == 'settings' %}active{% endif %}">
+                    <a href="{{ url_for('settings') }}" id="nav-settings">
+                        <i class="fas fa-sliders-h"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="{{ url_for('logout') }}" class="logout-btn" id="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Sign Out</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <!-- Top Navbar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
+            </div>
+
+            <div class="topbar-right">
+                <!-- Theme & Accent Control Pills -->
+                <div class="topbar-tools">
+                    <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+                        <i class="fas fa-sun"></i>
+                    </button>
+                    <div class="accent-dots">
+                        <div class="accent-dot" data-accent-val="blue" style="background:#3b82f6;" onclick="setAccent('blue')" title="Blue Accent"></div>
+                        <div class="accent-dot" data-accent-val="violet" style="background:#8b5cf6;" onclick="setAccent('violet')" title="Violet Accent"></div>
+                        <div class="accent-dot" data-accent-val="emerald" style="background:#10b981;" onclick="setAccent('emerald')" title="Emerald Accent"></div>
+                        <div class="accent-dot" data-accent-val="cyan" style="background:#06b6d4;" onclick="setAccent('cyan')" title="Cyan Accent"></div>
+                    </div>
+                </div>
+
+                <!-- User Profile -->
+                <div class="user-profile">
+                    <div class="avatar">
+                        <img src="https://ui-avatars.com/api/?name={{ g.user.name | urlencode if g.user else 'Scientist' }}&background=3b82f6&color=fff&size=36"
+                             alt="User Avatar">
+                    </div>
+                    <div class="user-info">
+                        <span class="user-name">{{ g.user.name if g.user else 'Scientist' }}</span>
+                        <span class="user-role">{{ g.user.org_name if g.user and g.user.org_name else 'Laboratory' }}</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dynamic Content -->
+        <div class="content-container">
+            <!-- Hidden container for flashed messages (auto-converted to toasts by script.js) -->
+            <div class="flash-messages" style="display:none;">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+            </div>
+
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Toast Notifications Root -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+    {% if firebase_configured is defined and firebase_configured %}
+    <script>
+    document.getElementById('logout-btn').addEventListener('click', function(e) {
+        e.preventDefault();
+        if (typeof firebase !== 'undefined' && firebase.auth) {
+            firebase.auth().signOut().finally(() => {
+                window.location.href = '{{ url_for("logout") }}';
+            });
+        } else {
+            window.location.href = '{{ url_for("logout") }}';
+        }
+    });
+    </script>
+    {% endif %}
+</body>
+</html>

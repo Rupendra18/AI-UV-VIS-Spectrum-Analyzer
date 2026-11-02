@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Reports{% endblock %}
+{% block page_title %}Generated Reports{% endblock %}
+
+{% block content %}
+<div class="card fade-in">
+    <div class="card-header">
+        <h2><i class="fas fa-file-contract" style="color:var(--primary);margin-right:0.6rem;"></i>PDF &amp; Data Reports</h2>
+        <span style="font-size: 0.825rem; font-weight: 600; color: var(--text-muted); background: rgba(255,255,255,0.06); padding: 0.25rem 0.75rem; border-radius: var(--radius-full);">
+            {{ reports | length }} Total
+        </span>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        {% if reports %}
+        <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Date &amp; Timestamp</th>
+                    <th>Filename</th>
+                    <th>λmax (nm)</th>
+                    <th>Absorbance</th>
+                    <th>Concentration</th>
+                    <th>AI Confidence</th>
+                    <th>Status</th>
+                    <th style="min-width: 220px; text-align: center;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports %}
+                <tr>
+                    <td style="white-space: nowrap; font-size: 0.8rem; color: var(--text-muted);">{{ report.timestamp }}</td>
+                    <td><strong style="font-size: 0.875rem; color: var(--text-main);">{{ report.filename }}</strong></td>
+                    <td>{{ report.peak_wavelength or '—' }}</td>
+                    <td>{{ report.peak_absorbance or '—' }}</td>
+                    <td><strong>{{ report.predicted_concentration or '—' }} ppm</strong></td>
+                    <td>
+                        {% if report.confidence_score is defined and report.confidence_score %}
+                        <span style="font-weight:700; color: {% if report.confidence_score >= 75 %}var(--success){% elif report.confidence_score >= 50 %}var(--warning){% else %}var(--danger){% endif %};">
+                            {{ report.confidence_score }}%
+                        </span>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>
+                        <span style="font-weight: 700; font-size: 0.775rem; padding: 0.25rem 0.65rem; border-radius: var(--radius-sm); display: inline-flex; align-items: center; gap: 0.35rem;
+                                     color: {% if report.status == 'HIGH' %}var(--danger){% elif report.status == 'SAFE' %}var(--success){% elif report.status == 'MODERATE' %}var(--warning){% else %}inherit{% endif %};
+                                     background: {% if report.status == 'HIGH' %}rgba(239,68,68,0.15){% elif report.status == 'SAFE' %}rgba(16,185,129,0.15){% elif report.status == 'MODERATE' %}rgba(245,158,11,0.15){% else %}transparent{% endif %};">
+                            <i class="fas {% if report.status == 'SAFE' %}fa-circle-check{% elif report.status == 'MODERATE' %}fa-triangle-exclamation{% else %}fa-circle-exclamation{% endif %}"></i>
+                            {{ report.status }}
+                        </span>
+                    </td>
+                    <td style="text-align: center;">
+                        <div style="display: flex; gap: 0.4rem; justify-content: center; flex-wrap: wrap;">
+                            <!-- View PDF -->
+                            <a href="{{ url_for('view_report', report_id=report.id) }}" target="_blank"
+                               class="icon-btn" title="View PDF Report">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <!-- Download PDF -->
+                            <a href="{{ url_for('download_report', report_id=report.id) }}"
+                               class="icon-btn" title="Download PDF Report" style="color: var(--primary);">
+                                <i class="fas fa-file-pdf"></i>
+                            </a>
+                            <!-- Download CSV -->
+                            <a href="{{ url_for('download_csv', report_id=report.id) }}"
+                               class="icon-btn" title="Export CSV Data">
+                                <i class="fas fa-file-csv"></i>
+                            </a>
+                            <!-- Share Link -->
+                            <button type="button" class="icon-btn" title="Copy Report Link"
+                                    onclick="shareReport('{{ url_for('download_report', report_id=report.id, _external=True) }}')">
+                                <i class="fas fa-share-nodes"></i>
+                            </button>
+                            <!-- Delete -->
+                            <form action="{{ url_for('delete_report', report_id=report.id) }}" method="POST"
+                                  style="display: inline;"
+                                  onsubmit="return confirm('Permanently delete this report?')">
+                                <button type="submit" class="icon-btn"
+                                        style="color: var(--danger); background: rgba(239,68,68,0.1);"
+                                        title="Delete Report">
+                                    <i class="fas fa-trash-can"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-folder-open"></i>
+            <h3 style="font-family:var(--font-heading); color:var(--text-main); font-size:1.1rem;">No Reports Available</h3>
+            <p style="font-size:0.875rem;">Analyse a spectrum file on the Dashboard to generate PDF reports.</p>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary" style="margin-top: 0.5rem;">
+                <i class="fas fa-cloud-arrow-up"></i> Upload Spectrum CSV
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function shareReport(url) {
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(url).then(() => {
+            if (typeof showToast === 'function') showToast('Report PDF link copied to clipboard!', 'success', 'fa-link');
+        });
+    } else {
+        const el = document.createElement('textarea');
+        el.value = url;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        if (typeof showToast === 'function') showToast('Report PDF link copied to clipboard!', 'success', 'fa-link');
+    }
+}
+</script>
+{% endblock %}

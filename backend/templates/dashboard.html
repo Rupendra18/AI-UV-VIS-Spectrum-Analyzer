@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard Overview{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid fade-in">
+
+    <!-- ── KPI Summary Section ── -->
+    <section class="card summary-section">
+        <div class="card-body" style="padding: 1.25rem;">
+            <div class="kpi-grid">
+                <!-- Total Analyses -->
+                <div class="kpi-card">
+                    <div class="kpi-icon"><i class="fas fa-layer-group"></i></div>
+                    <div class="kpi-details">
+                        <span class="kpi-label">Total Analyses</span>
+                        <span class="kpi-value stat-value-anim" data-target="{{ stats.total if stats else 0 }}">{{ stats.total if stats else 0 }}</span>
+                    </div>
+                </div>
+                <!-- Safe Samples -->
+                <div class="kpi-card kpi-safe">
+                    <div class="kpi-icon"><i class="fas fa-check-circle"></i></div>
+                    <div class="kpi-details">
+                        <span class="kpi-label">Safe Samples</span>
+                        <span class="kpi-value stat-value-anim" data-target="{{ stats.safe if stats else 0 }}">{{ stats.safe if stats else 0 }}</span>
+                    </div>
+                </div>
+                <!-- Moderate Risk -->
+                <div class="kpi-card kpi-mod">
+                    <div class="kpi-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div class="kpi-details">
+                        <span class="kpi-label">Moderate Risk</span>
+                        <span class="kpi-value stat-value-anim" data-target="{{ stats.moderate if stats else 0 }}">{{ stats.moderate if stats else 0 }}</span>
+                    </div>
+                </div>
+                <!-- High Concern -->
+                <div class="kpi-card kpi-high">
+                    <div class="kpi-icon"><i class="fas fa-shield-virus"></i></div>
+                    <div class="kpi-details">
+                        <span class="kpi-label">High Concern</span>
+                        <span class="kpi-value stat-value-anim" data-target="{{ stats.high_risk if stats else 0 }}">{{ stats.high_risk if stats else 0 }}</span>
+                    </div>
+                </div>
+                <!-- Avg Concentration -->
+                <div class="kpi-card kpi-avg">
+                    <div class="kpi-icon"><i class="fas fa-vial-circle-check"></i></div>
+                    <div class="kpi-details">
+                        <span class="kpi-label">Avg. Concentration</span>
+                        <span class="kpi-value"><span class="stat-value-anim" data-target="{{ stats.avg_concentration if stats else 0 }}">{{ stats.avg_concentration if stats else 0 }}</span> <small style="font-size:0.8rem;">ppm</small></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── CSV Upload Section ── -->
+    <section class="card upload-section">
+        <div class="card-header">
+            <h2><i class="fas fa-cloud-arrow-up" style="color:var(--primary);margin-right:0.6rem;"></i>Upload Spectrum</h2>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('upload_file') }}" method="POST" enctype="multipart/form-data" id="upload-form">
+                <div class="upload-area" id="upload-dropzone" onclick="document.getElementById('file-input').click();">
+                    <input type="file" name="file" id="file-input" accept=".csv" style="display: none;" onchange="handleFileSelect(this)">
+                    <div class="upload-icon">
+                        <i class="fas fa-file-csv" id="upload-icon-fa"></i>
+                    </div>
+                    <h3 id="upload-title">Drop CSV Spectrum File Here</h3>
+                    <p>or click to browse from device</p>
+                    <button type="button" class="btn btn-outline" style="margin-top: 1rem;">
+                        <i class="fas fa-folder-open"></i> Browse Files
+                    </button>
+                    <span class="file-info">Requires <b>Wavelength</b> &amp; <b>Absorbance</b> columns</span>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- ── Interactive Plotly Spectrum Graph Section ── -->
+    <section class="card graph-section">
+        <div class="card-header">
+            <h2><i class="fas fa-chart-area" style="color:var(--primary);margin-right:0.6rem;"></i>UV-Vis Spectral Plot</h2>
+            <div class="card-actions">
+                {% if analysis_id %}
+                <a href="{{ url_for('view_report', report_id=analysis_id) }}" target="_blank" class="icon-btn" title="View PDF Report"><i class="fas fa-eye"></i></a>
+                <a href="{{ url_for('download_report', report_id=analysis_id) }}" class="icon-btn" title="Download PDF Report"><i class="fas fa-file-pdf"></i></a>
+                <a href="{{ url_for('download_csv', report_id=analysis_id) }}" class="icon-btn" title="Export CSV Data"><i class="fas fa-file-csv"></i></a>
+                {% endif %}
+                <button class="icon-btn" title="Download High-Res PNG" onclick="downloadGraph()" id="download-graph-btn" {% if not graphJSON %}style="display:none"{% endif %}>
+                    <i class="fas fa-camera"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body" style="padding: 1rem; display: flex; flex-direction: column;">
+            {% if graphJSON %}
+            <div id="spectrum-graph" style="width: 100%; min-height: 420px; flex-grow: 1;"></div>
+            <script>
+                var graphData = {{ graphJSON | safe }};
+                var plotlyConfig = {
+                    responsive: true,
+                    displayModeBar: true,
+                    displaylogo: false,
+                    modeBarButtonsToRemove: ['lasso2d', 'select2d'],
+                    toImageButtonOptions: {
+                        format: 'png',
+                        filename: 'uv_vis_spectrum_plot',
+                        height: 700,
+                        width: 1200,
+                        scale: 3
+                    }
+                };
+                Plotly.newPlot('spectrum-graph', graphData.data, graphData.layout, plotlyConfig);
+
+                function downloadGraph() {
+                    Plotly.downloadImage('spectrum-graph', {
+                        format: 'png', filename: 'uv_vis_spectrum_plot',
+                        width: 1400, height: 800, scale: 3
+                    });
+                    if (typeof showToast === 'function') {
+                        showToast('Graph exported as high-resolution PNG!', 'success', 'fa-image');
+                    }
+                }
+            </script>
+            {% else %}
+            <div class="graph-placeholder">
+                <i class="fas fa-chart-line"></i>
+                <h3 style="font-family:var(--font-heading); color:var(--text-main); font-size:1.1rem;">No Spectrum Loaded</h3>
+                <p style="font-size:0.875rem;">Upload a spectral CSV data file to render interactive absorption curve.</p>
+            </div>
+            <script>
+                function downloadGraph() {}
+            </script>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- ── AI Analysis & Prediction Insights Panel ── -->
+    <section class="card analysis-section">
+        <div class="card-header">
+            <h2><i class="fas fa-brain-circuit" style="color:var(--primary);margin-right:0.6rem;"></i>AI Spectrum Intelligence</h2>
+        </div>
+        <div class="card-body">
+            {% if peak_wavelength is not none %}
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: var(--secondary); background: rgba(56,189,248,0.15);">
+                        <i class="fas fa-wave-sine"></i>
+                    </div>
+                    <div class="stat-details">
+                        <span class="stat-label">Peak Wavelength (λmax)</span>
+                        <span class="stat-value">{{ peak_wavelength }} nm</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: var(--accent); background: rgba(139,92,246,0.15);">
+                        <i class="fas fa-gauge-high"></i>
+                    </div>
+                    <div class="stat-details">
+                        <span class="stat-label">Peak Absorbance</span>
+                        <span class="stat-value">{{ peak_absorbance }} AU</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: var(--primary); background: rgba(59,130,246,0.15);">
+                        <i class="fas fa-flask"></i>
+                    </div>
+                    <div class="stat-details">
+                        <span class="stat-label">Predicted Concentration</span>
+                        <span class="stat-value">{{ predicted_concentration }} ppm</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"
+                         style="color: {% if status == 'SAFE' %}var(--success){% elif status == 'MODERATE' %}var(--warning){% else %}var(--danger){% endif %};
+                                background: {% if status == 'SAFE' %}rgba(16,185,129,0.15){% elif status == 'MODERATE' %}rgba(245,158,11,0.15){% else %}rgba(239,68,68,0.15){% endif %};">
+                        <i class="fas fa-shield-halved"></i>
+                    </div>
+                    <div class="stat-details">
+                        <span class="stat-label">Risk Classification</span>
+                        <span class="stat-value"
+                              style="color: {% if status == 'SAFE' %}var(--success){% elif status == 'MODERATE' %}var(--warning){% else %}var(--danger){% endif %};">
+                            {{ status }}
+                        </span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: var(--success); background: rgba(16,185,129,0.15);">
+                        <i class="fas fa-microchip"></i>
+                    </div>
+                    <div class="stat-details">
+                        <span class="stat-label">AI Confidence Score</span>
+                        <span class="stat-value">{{ confidence_score }}%</span>
+                    </div>
+                </div>
+            </div>
+
+            {% if interpretation %}
+            <div style="margin-top: 1.25rem; padding: 1.15rem; background: rgba(15,23,42,0.4); border: 1px solid var(--glass-border); border-radius: var(--radius-md);">
+                <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom: 0.5rem;">
+                    <i class="fas fa-atom" style="color:var(--primary);"></i>
+                    <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); text-transform: uppercase; letter-spacing: 0.05em;">Scientific Interpretation</span>
+                </div>
+                <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">{{ interpretation }}</p>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div class="empty-state" style="padding: 2.5rem 1rem;">
+                <i class="fas fa-robot"></i>
+                <h3 style="font-family:var(--font-heading); font-size:1rem; color:var(--text-main);">AI Ready</h3>
+                <p style="font-size:0.85rem;">Upload a spectral dataset CSV to calculate $\lambda_{max}$, peak absorbance, concentration, and AI confidence metrics.</p>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- ── ML Model Evaluation Card ── -->
+    {% if algorithm_name is not none %}
+    <section class="card" style="grid-column: 1 / -1;">
+        <div class="card-header">
+            <h2><i class="fas fa-robot" style="color:var(--accent);margin-right:0.6rem;"></i>ML Model Evaluation</h2>
+            <span style="font-size:0.8rem; padding: 0.3rem 0.85rem; border-radius: var(--radius-full); background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.4); color: #a78bfa; font-weight: 600;">
+                {{ algorithm_name }}
+            </span>
+        </div>
+        <div class="card-body">
+            <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
+                <div class="stat-card">
+                    <div class="stat-icon" style="color:#8b5cf6; background:rgba(139,92,246,0.15);"><i class="fas fa-chart-line"></i></div>
+                    <div class="stat-details">
+                        <span class="stat-label">Model Accuracy (R²)</span>
+                        <span class="stat-value" style="color:#a78bfa;">{{ model_accuracy }}%</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color:#06b6d4; background:rgba(6,182,212,0.15);"><i class="fas fa-arrows-up-down"></i></div>
+                    <div class="stat-details">
+                        <span class="stat-label">RMSE</span>
+                        <span class="stat-value" style="color:#38bdf8;">{{ rmse }}</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color:#f59e0b; background:rgba(245,158,11,0.15);"><i class="fas fa-ruler"></i></div>
+                    <div class="stat-details">
+                        <span class="stat-label">MAE</span>
+                        <span class="stat-value" style="color:#fbbf24;">{{ mae }}</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color:var(--success); background:rgba(16,185,129,0.15);"><i class="fas fa-microchip"></i></div>
+                    <div class="stat-details">
+                        <span class="stat-label">Prediction Confidence</span>
+                        <span class="stat-value" style="color:var(--success);">{{ confidence_score }}%</span>
+                    </div>
+                </div>
+            </div>
+
+            {% if featureImportanceJSON %}
+            <div style="margin-top:1.5rem;">
+                <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+                    <i class="fas fa-sliders" style="color:var(--primary);"></i>
+                    <span style="font-size:0.8rem; font-weight:700; color:var(--text-main); text-transform:uppercase; letter-spacing:0.05em;">Feature Importance</span>
+                </div>
+                <div id="feature-importance-chart" style="width:100%; min-height:230px;"></div>
+                <script>
+                    var fiData = {{ featureImportanceJSON | safe }};
+                    Plotly.newPlot('feature-importance-chart', fiData.data, fiData.layout, {
+                        responsive: true, displayModeBar: false
+                    });
+                </script>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+    {% endif %}
+
+
+    <section class="card activity-section">
+        <div class="card-header">
+            <h2><i class="fas fa-clock-rotate-left" style="color:var(--primary);margin-right:0.6rem;"></i>Recent Analyses</h2>
+            <a href="{{ url_for('history') }}" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.775rem;">View All</a>
+        </div>
+        <div class="card-body">
+            {% if recent_activity %}
+            <div class="activity-list">
+                {% for item in recent_activity %}
+                <div class="activity-item">
+                    <div class="activity-icon"
+                         style="color: {% if item.status == 'SAFE' %}var(--success){% elif item.status == 'MODERATE' %}var(--warning){% else %}var(--danger){% endif %};
+                                background: {% if item.status == 'SAFE' %}rgba(16,185,129,0.15){% elif item.status == 'MODERATE' %}rgba(245,158,11,0.15){% else %}rgba(239,68,68,0.15){% endif %};">
+                        <i class="fas fa-vial"></i>
+                    </div>
+                    <div class="activity-details">
+                        <p class="activity-text">
+                            <strong>{{ item.filename }}</strong> &mdash;
+                            <span style="font-weight:700; color: {% if item.status == 'SAFE' %}var(--success){% elif item.status == 'MODERATE' %}var(--warning){% else %}var(--danger){% endif %};">
+                                {{ item.status }}
+                            </span>
+                            ({{ item.predicted_concentration }} ppm)
+                        </p>
+                        <p class="activity-time">{{ item.timestamp }}</p>
+                    </div>
+                    <a href="{{ url_for('download_report', report_id=item.id) }}" class="icon-btn" title="Download PDF Report" style="flex-shrink:0;">
+                        <i class="fas fa-file-pdf"></i>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state" style="padding: 2.5rem 1rem;">
+                <i class="fas fa-box-open"></i>
+                <h3 style="font-family:var(--font-heading); font-size:1rem; color:var(--text-main);">No Recent Runs</h3>
+                <p style="font-size:0.85rem;">Your analysis run logs will appear here automatically.</p>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+</div>
+
+<script>
+    function handleFileSelect(input) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            document.getElementById('upload-icon-fa').className = 'fas fa-spinner fa-spin';
+            document.getElementById('upload-title').textContent = 'Analyzing: ' + file.name;
+            if (typeof showToast === 'function') {
+                showToast('Uploading ' + file.name + ' for AI spectrum computation...', 'info', 'fa-cloud-upload-alt');
+            }
+            document.getElementById('upload-form').submit();
+        }
+    }
+</script>
+{% endblock %}

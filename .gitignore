@@ -1,0 +1,99 @@
+# ═══════════════════════════════════════════════════════
+# AI UV-VIS Spectrum Analyzer — .gitignore
+# ═══════════════════════════════════════════════════════
+
+# ── Python ──────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+*.egg
+
+# Virtual environments
+env/
+venv/
+ENV/
+.venv/
+.env
+
+# ── Node / React ────────────────────────────────────────
+node_modules/
+dist/
+.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+web_app/package-lock.json
+
+# ── Android / Gradle ───────────────────────────────────
+.gradle/
+build/
+app/build/
+*.apk
+*.aab
+*.aar
+*.iml
+.idea/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+
+# ── Flutter / Dart ──────────────────────────────────────
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+pubspec.lock
+
+# ── Backend sensitive data ──────────────────────────────
+# User database (contains password hashes — NEVER commit)
+backend/data/
+
+# Uploaded user files
+backend/uploads/
+
+# ML model binaries (too large / reproducible via train_model.py)
+backend/models/*.pkl
+
+# ── Secrets & Credentials ──────────────────────────────
+serviceAccountKey.json
+google-services.json
+*.keystore
+*.jks
+*.pem
+*.p12
+*.key
+.env
+.env.*
+!.env.example
+!backend/.env.example
+
+# ── IDE & OS ────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+.vscode/
+*.code-workspace
+.project
+.classpath
+.settings/
+
+# ── Test reports (generated / large binary files) ──────
+tests/load/reports/*.xlsx
+
+# ── Miscellaneous ──────────────────────────────────────
+*.log
+*.tmp
+*.bak
+*.cache
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/

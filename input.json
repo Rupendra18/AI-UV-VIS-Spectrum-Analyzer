@@ -1,0 +1,6 @@
+{
+  "baseUrl": "http://localhost:5000",
+  "user": "REPLACE_WITH_USER_JWT_TOKEN",
+  "admin": "REPLACE_WITH_ADMIN_JWT_TOKEN",
+  "guest": ""
+}

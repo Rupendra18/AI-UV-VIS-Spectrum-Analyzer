@@ -1,0 +1,15 @@
+{
+  "name": "ai-uvvis-spectrum-analyzer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI UV-Vis Spectrum Analyzer - one-command dev launcher",
+  "scripts": {
+    "dev": "concurrently --kill-others --prefix \"[{name}]\" --names \"BACKEND,WEB\" --prefix-colors \"cyan.bold,magenta.bold\" \"npm run backend\" \"npm run frontend\"",
+    "frontend": "npm --prefix web_app run dev",
+    "backend": "python backend/app.py",
+    "install:web": "npm --prefix web_app install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

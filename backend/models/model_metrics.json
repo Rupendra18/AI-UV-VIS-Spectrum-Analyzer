@@ -1,0 +1,14 @@
+{
+  "algorithm": "Random Forest Regressor",
+  "r2_score": 0.9974,
+  "accuracy_percentage": 99.74,
+  "rmse": 0.4848,
+  "mae": 0.3837,
+  "n_samples": 1200,
+  "n_estimators": 150,
+  "feature_importances": {
+    "Peak_Wavelength": 0.026169462056986118,
+    "Peak_Absorbance": 0.9710730572000801,
+    "Baseline_Absorbance": 0.0027574807429337628
+  }
+}
