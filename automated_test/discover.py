@@ -93,6 +93,6 @@ def print_endpoints():
 if __name__ == '__main__':
     print_endpoints()
     save_endpoints()
-    print("\n⏸  PAUSING: Review the endpoint list above.")
+    print("\n[PAUSE] Review the endpoint list above.")
     print("   Confirm you are authorized to test all endpoints listed.")
     print("   Then run: python automated_test/runner.py")

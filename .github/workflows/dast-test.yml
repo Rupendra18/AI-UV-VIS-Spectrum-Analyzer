@@ -1,0 +1,56 @@
+name: DAST Security Testing & Vulnerability Report
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'backend/**'
+      - 'automated_test/**'
+    branches: [ main ]
+
+jobs:
+  dast-security-scan:
+    name: DAST Dynamic Security Testing
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install requests pyjwt
+
+      - name: Start Target API Server
+        run: |
+          cd backend
+          python app.py &
+          sleep 5
+          curl -I http://localhost:5000/login || true
+
+      - name: Step 1 - Discover API Endpoints
+        run: |
+          python automated_test/discover.py
+
+      - name: Step 3 & 4 - Execute DAST Test Suite & Generate report.json
+        run: |
+          python automated_test/runner.py
+
+      - name: Upload DAST Security Report Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DAST_Security_Report
+          path: |
+            automated_test/report.json
+            automated_test/savepoint_endpoints.json
+            automated_test/savepoint_results.json
+          retention-days: 30
