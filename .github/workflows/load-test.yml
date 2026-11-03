@@ -58,3 +58,4 @@ jobs:
           name: Load_Test_Report_100_Users
           path: tests/load/reports/*.xlsx
           retention-days: 30
+

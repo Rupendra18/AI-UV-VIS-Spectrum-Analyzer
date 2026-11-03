@@ -48,7 +48,21 @@ export function AuthProvider({ children }) {
       const localToken = localStorage.getItem('uvvis_token');
       if (localToken) {
         setToken(localToken);
-        // user stays null until a page verifies the token
+        import('../services/api').then(({ default: api }) => {
+          api.get('/auth/profile').then(res => {
+            if (res.data?.user) {
+              setUserProfile(res.data.user);
+              setUser({ uid: res.data.user.id || 'local', email: res.data.user.email, displayName: res.data.user.name });
+            }
+          }).catch(() => {
+            // invalid or expired token
+            localStorage.removeItem('uvvis_token');
+            setToken(null);
+          }).finally(() => {
+            setLoading(false);
+          });
+        });
+        return () => {};
       }
       setLoading(false);
     }
@@ -57,6 +71,7 @@ export function AuthProvider({ children }) {
 
   // Firebase login
   const loginWithFirebase = async (email, password) => {
+    if (!auth) throw new Error('Firebase Auth not available');
     const cred = await signInWithEmailAndPassword(auth, email, password);
     const t = await cred.user.getIdToken();
     setToken(t);
@@ -64,7 +79,7 @@ export function AuthProvider({ children }) {
     return cred;
   };
 
-  // Local / API login (when Firebase not configured)
+  // Local / API login (when Firebase not configured or fails)
   const loginWithAPI = async (email, password) => {
     const { default: api } = await import('../services/api');
     const res = await api.post('/auth/login', { email, password });
@@ -73,42 +88,63 @@ export function AuthProvider({ children }) {
     localStorage.setItem('uvvis_token', t);
     setUserProfile(u);
     // Simulate minimal user object
-    setUser({ uid, email, displayName: u.name });
+    setUser({ uid, email, displayName: u?.name || email.split('@')[0] });
     return res.data;
   };
 
   const login = async (email, password) => {
-    try {
-      return await loginWithFirebase(email, password);
-    } catch (_) {
-      return await loginWithAPI(email, password);
+    if (auth) {
+      try {
+        return await loginWithFirebase(email, password);
+      } catch (err) {
+        // If Firebase rejected because user isn't in Firebase, try local backend API
+        try {
+          return await loginWithAPI(email, password);
+        } catch (apiErr) {
+          throw new Error(apiErr.response?.data?.error || err.message || 'Invalid email or password');
+        }
+      }
     }
+    return await loginWithAPI(email, password);
   };
 
   const register = async (name, orgName, email, password) => {
     const { default: api } = await import('../services/api');
-    try {
-      // Try Firebase first
-      const cred = await createUserWithEmailAndPassword(auth, email, password);
-      await updateProfile(cred.user, { displayName: name });
-      const t = await cred.user.getIdToken();
-      setToken(t);
-      localStorage.setItem('uvvis_token', t);
-      // Save profile to Firestore
-      await setDoc(doc(db, 'Users', cred.user.uid), {
-        name, org_name: orgName, email, role: 'User',
-        created_at: new Date().toISOString(),
-      });
-      return cred;
-    } catch (_) {
-      // Fallback to local API
-      const res = await api.post('/auth/register', { name, org_name: orgName, email, password });
-      setToken(res.data.token);
-      localStorage.setItem('uvvis_token', res.data.token);
-      setUserProfile(res.data.user);
-      setUser({ uid: res.data.uid, email, displayName: name });
-      return res.data;
+    if (auth) {
+      try {
+        // Try Firebase first
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(cred.user, { displayName: name });
+        const t = await cred.user.getIdToken();
+        setToken(t);
+        localStorage.setItem('uvvis_token', t);
+        // Save profile to Firestore
+        await setDoc(doc(db, 'Users', cred.user.uid), {
+          name, org_name: orgName, email, role: 'User',
+          created_at: new Date().toISOString(),
+        });
+        return cred;
+      } catch (err) {
+        // Fallback to local API
+        try {
+          const res = await api.post('/auth/register', { name, org_name: orgName, email, password });
+          setToken(res.data.token);
+          localStorage.setItem('uvvis_token', res.data.token);
+          setUserProfile(res.data.user);
+          setUser({ uid: res.data.uid, email, displayName: name });
+          return res.data;
+        } catch (apiErr) {
+          throw new Error(apiErr.response?.data?.error || err.message || 'Registration failed');
+        }
+      }
     }
+    // Fallback to local API directly
+    const res = await api.post('/auth/register', { name, org_name: orgName, email, password });
+    setToken(res.data.token);
+    localStorage.setItem('uvvis_token', res.data.token);
+    setUserProfile(res.data.user);
+    setUser({ uid: res.data.uid, email, displayName: name });
+    return res.data;
   };
 
   const forgotPassword = async (email) => {

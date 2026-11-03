@@ -431,3 +431,4 @@ if __name__ == "__main__":
     build_selenium_report()
     build_appium_report()
     build_complete_summary_report()
+

@@ -54,3 +54,4 @@ jobs:
             automated_test/savepoint_endpoints.json
             automated_test/savepoint_results.json
           retention-days: 30
+

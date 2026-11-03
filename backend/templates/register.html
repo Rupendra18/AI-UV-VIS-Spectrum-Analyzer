@@ -127,13 +127,19 @@
 
             setLoading(true);
             try {
-                const userCred = await firebase.auth().createUserWithEmailAndPassword(email, password);
-                await userCred.user.updateProfile({displayName: name});
-                const idToken = await userCred.user.getIdToken();
+                let idToken = null;
+                try {
+                    const userCred = await firebase.auth().createUserWithEmailAndPassword(email, password);
+                    await userCred.user.updateProfile({displayName: name});
+                    idToken = await userCred.user.getIdToken();
+                } catch (fbErr) {
+                    console.warn('Firebase registration failed, attempting backend registration:', fbErr);
+                }
+
                 const resp = await fetch('/api/register', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({idToken, name, org_name: org})
+                    body: JSON.stringify({idToken, name, org_name: org, email, password})
                 });
                 const data = await resp.json();
                 if (resp.ok && data.status === 'ok') {

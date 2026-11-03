@@ -71,3 +71,4 @@ jobs:
             tests/selenium/reports/*.xlsx
             tests/appium/reports/*.xlsx
           retention-days: 30
+

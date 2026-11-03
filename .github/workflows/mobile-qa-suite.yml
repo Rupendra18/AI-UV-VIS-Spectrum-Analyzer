@@ -48,3 +48,4 @@ jobs:
             tests/appium/reports/Appium_Enterprise_350_Test_Report.xlsx
             tests/selenium/reports/Selenium_Test_Report_300_TestCases.xlsx
           retention-days: 30
+

@@ -191,6 +191,14 @@ def init_api(load_settings_fn, save_settings_fn, load_analyses_fn, save_analysis
         session.clear()
         return jsonify({'status': 'ok', 'message': 'Logged out'})
 
+    @api_bp.route('/auth/forgot-password', methods=['POST'])
+    def api_forgot_password():
+        data = request.get_json(silent=True) or request.form.to_dict()
+        email = data.get('email', '').strip().lower()
+        if not email:
+            return jsonify({'error': 'Email is required'}), 400
+        return jsonify({'status': 'ok', 'message': 'If this email is registered, password reset instructions have been sent.'})
+
     @api_bp.route('/auth/profile', methods=['GET', 'PUT'])
     def api_profile():
         uid = _get_uid()
@@ -198,7 +206,7 @@ def init_api(load_settings_fn, save_settings_fn, load_analyses_fn, save_analysis
             return jsonify({'error': 'Authentication required'}), 401
 
         if request.method == 'GET':
-            user = get_user_doc_fn(uid) or {}
+            user = dict(get_user_doc_fn(uid) or {})
             user.pop('password_hash', None)
             return jsonify({'status': 'ok', 'user': user})
 

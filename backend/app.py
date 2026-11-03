@@ -179,7 +179,8 @@ def get_user_doc(uid):
         except Exception:
             pass
     users = _get_cached_json(USERS_FILE, 'users', [])
-    return next((u for u in users if u.get('id') == uid), None)
+    u = next((u for u in users if u.get('id') == uid), None)
+    return dict(u) if u else None
 
 
 def save_user_doc(uid, data):
@@ -443,64 +444,111 @@ def logout():
 
 @app.route('/api/login', methods=['POST'])
 def api_login():
-    """Verify Firebase ID token and establish server session."""
-    if not FIREBASE_CONFIGURED or not firebase_auth:
-        return jsonify({'error': 'Firebase not configured'}), 503
-    data = request.get_json(silent=True) or {}
+    """Authenticate via Firebase ID token or email/password fallback."""
+    data = request.get_json(silent=True) or request.form.to_dict()
     id_token = data.get('idToken', '')
-    if not id_token:
-        return jsonify({'error': 'No token provided'}), 400
-    try:
-        decoded = firebase_auth.verify_id_token(id_token)
-        uid = decoded['uid']
-        email = decoded.get('email', '')
-        name = decoded.get('name', email.split('@')[0])
-        existing = get_user_doc(uid)
-        if not existing:
-            user_data = {
-                'name': name, 'email': email, 'role': 'User',
-                'created_at': datetime.now().isoformat()
-            }
-            save_user_doc(uid, user_data)
-            save_settings(uid, {**DEFAULT_SETTINGS, 'scientist_name': name})
-        session.clear()
-        session['user_id'] = uid
-        return jsonify({'status': 'ok', 'uid': uid})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 401
+    email = data.get('email', '').strip().lower()
+    password = data.get('password', '')
+
+    # 1. Firebase auth flow
+    if id_token and FIREBASE_CONFIGURED and firebase_auth:
+        try:
+            decoded = firebase_auth.verify_id_token(id_token)
+            uid = decoded['uid']
+            email = decoded.get('email', '')
+            name = decoded.get('name', email.split('@')[0])
+            existing = get_user_doc(uid)
+            if not existing:
+                user_data = {
+                    'name': name, 'email': email, 'role': 'User',
+                    'created_at': datetime.now().isoformat()
+                }
+                save_user_doc(uid, user_data)
+                save_settings(uid, {**DEFAULT_SETTINGS, 'scientist_name': name})
+            session.clear()
+            session['user_id'] = uid
+            return jsonify({'status': 'ok', 'uid': uid})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 401
+
+    # 2. Local email/password flow
+    if email and password:
+        from werkzeug.security import check_password_hash
+        users = _cache_store.get('users') or _load_json(USERS_FILE, [])
+        user = next((u for u in reversed(users) if u.get('email', '').lower() == email), None)
+        if not user and os.path.exists(USERS_FILE):
+            try:
+                with open(USERS_FILE, 'r', encoding='utf-8') as f:
+                    disk_users = json.load(f)
+                user = next((u for u in reversed(disk_users) if u.get('email', '').lower() == email), None)
+            except Exception:
+                pass
+        if user and check_password_hash(user.get('password_hash', ''), password):
+            session.clear()
+            session['user_id'] = user['id']
+            return jsonify({'status': 'ok', 'uid': user['id'], 'user': {'name': user.get('name'), 'email': user.get('email'), 'role': user.get('role', 'User')}})
+        return jsonify({'error': 'Invalid email or password'}), 401
+
+    return jsonify({'error': 'Email and password or valid idToken required'}), 400
 
 
 @app.route('/api/register', methods=['POST'])
 def api_register():
-    """Register a new user via Firebase Auth token + profile data."""
-    if not FIREBASE_CONFIGURED or not firebase_auth:
-        return jsonify({'error': 'Firebase not configured'}), 503
-    data = request.get_json(silent=True) or {}
+    """Register a new user via Firebase Auth token or local credentials."""
+    data = request.get_json(silent=True) or request.form.to_dict()
     id_token = data.get('idToken', '')
     name = data.get('name', '').strip()
     org_name = data.get('org_name', '').strip()
-    if not id_token:
-        return jsonify({'error': 'No token provided'}), 400
-    try:
-        decoded = firebase_auth.verify_id_token(id_token)
-        uid = decoded['uid']
-        email = decoded.get('email', '')
+    email = data.get('email', '').strip().lower()
+    password = data.get('password', '')
+
+    # 1. Firebase auth flow
+    if id_token and FIREBASE_CONFIGURED and firebase_auth:
+        try:
+            decoded = firebase_auth.verify_id_token(id_token)
+            uid = decoded['uid']
+            email = decoded.get('email', '')
+            user_data = {
+                'name': name or email.split('@')[0],
+                'email': email,
+                'org_name': org_name,
+                'role': 'User',
+                'created_at': datetime.now().isoformat()
+            }
+            save_user_doc(uid, user_data)
+            save_settings(uid, {**DEFAULT_SETTINGS,
+                                 'org_name': org_name,
+                                 'scientist_name': name})
+            session.clear()
+            session['user_id'] = uid
+            return jsonify({'status': 'ok', 'uid': uid})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 401
+
+    # 2. Local registration flow
+    if email and password and name:
+        from werkzeug.security import generate_password_hash
+        users = list(_get_cached_json(USERS_FILE, 'users', []))
+        if any(u.get('email', '').lower() == email for u in users):
+            return jsonify({'error': 'Email already registered'}), 409
+        uid = str(uuid.uuid4())
         user_data = {
-            'name': name or email.split('@')[0],
+            'id': uid,
+            'name': name,
             'email': email,
             'org_name': org_name,
             'role': 'User',
+            'password_hash': generate_password_hash(password),
             'created_at': datetime.now().isoformat()
         }
-        save_user_doc(uid, user_data)
-        save_settings(uid, {**DEFAULT_SETTINGS,
-                             'org_name': org_name,
-                             'scientist_name': name})
+        users.append(user_data)
+        _set_cached_json(USERS_FILE, 'users', users)
+        save_settings(uid, {**DEFAULT_SETTINGS, 'org_name': org_name, 'scientist_name': name})
         session.clear()
         session['user_id'] = uid
-        return jsonify({'status': 'ok', 'uid': uid})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 401
+        return jsonify({'status': 'ok', 'uid': uid}), 201
+
+    return jsonify({'error': 'Name, email and password required'}), 400
 
 
 # ── Dashboard ─────────────────────────────────────────────────────────────────
