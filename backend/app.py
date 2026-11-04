@@ -361,8 +361,11 @@ def splash():
 
 
 @app.route('/', methods=['GET', 'POST'])
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login', methods=['GET', 'POST', 'OPTIONS'])
+@app.route('/login/', methods=['GET', 'POST', 'OPTIONS'])
 def login():
+    if request.method == 'OPTIONS':
+        return ('', 204)
     if g.user:
         return redirect(url_for('dashboard'))
     if request.method == 'GET' and not session.get('splash_shown') and request.args.get('nosplash') != '1':
@@ -370,24 +373,34 @@ def login():
         return render_template('splash.html')
 
     if request.method == 'POST':
+        data = request.get_json(silent=True) or request.form.to_dict()
+        email = (data.get('email') or '').strip().lower()
+        password = data.get('password') or ''
         if not FIREBASE_CONFIGURED:
             from werkzeug.security import check_password_hash
-            email = request.form.get('email', '').strip().lower()
-            password = request.form.get('password', '')
             users = _load_json(USERS_FILE, [])
-            user = next((u for u in users if u.get('email', '').lower() == email), None)
+            user = next((u for u in reversed(users) if u.get('email', '').lower() == email), None)
             if user and check_password_hash(user.get('password_hash', ''), password):
                 session.clear()
                 session['user_id'] = user['id']
+                if request.is_json:
+                    return jsonify({'status': 'ok', 'uid': user['id']})
                 return redirect(url_for('dashboard'))
+            if request.is_json:
+                return jsonify({'error': 'Invalid email or password'}), 401
             flash('Invalid email or password.', 'danger')
         else:
+            if request.is_json:
+                return jsonify({'error': 'Please use Firebase Authentication'}), 400
             flash('Please use the login form with Firebase Authentication.', 'danger')
     return render_template('login.html', firebase_configured=FIREBASE_CONFIGURED)
 
 
-@app.route('/register', methods=['GET', 'POST'])
+@app.route('/register', methods=['GET', 'POST', 'OPTIONS'])
+@app.route('/register/', methods=['GET', 'POST', 'OPTIONS'])
 def register():
+    if request.method == 'OPTIONS':
+        return ('', 204)
     if g.user:
         return redirect(url_for('dashboard'))
     if request.method == 'POST' and not FIREBASE_CONFIGURED:
@@ -442,9 +455,22 @@ def logout():
 
 # ── Firebase Auth API (called from JS) ───────────────────────────────────────
 
-@app.route('/api/login', methods=['POST'])
+@app.route('/api/login', methods=['GET', 'POST', 'OPTIONS'])
+@app.route('/api/login/', methods=['GET', 'POST', 'OPTIONS'])
+@app.route('/api/auth/login', methods=['GET', 'POST', 'OPTIONS'])
+@app.route('/api/auth/login/', methods=['GET', 'POST', 'OPTIONS'])
 def api_login():
     """Authenticate via Firebase ID token or email/password fallback."""
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
+    if request.method == 'GET':
+        return jsonify({
+            'status': 'ok',
+            'endpoint': 'login',
+            'methods': ['POST', 'GET', 'OPTIONS'],
+            'message': 'Login endpoint is active. Submit POST with email and password or idToken.'
+        }), 200
+
     data = request.get_json(silent=True) or request.form.to_dict()
     id_token = data.get('idToken', '')
     email = data.get('email', '').strip().lower()
@@ -492,9 +518,22 @@ def api_login():
     return jsonify({'error': 'Email and password or valid idToken required'}), 400
 
 
-@app.route('/api/register', methods=['POST'])
+@app.route('/api/register', methods=['GET', 'POST', 'OPTIONS'])
+@app.route('/api/register/', methods=['GET', 'POST', 'OPTIONS'])
+@app.route('/api/auth/register', methods=['GET', 'POST', 'OPTIONS'])
+@app.route('/api/auth/register/', methods=['GET', 'POST', 'OPTIONS'])
 def api_register():
     """Register a new user via Firebase Auth token or local credentials."""
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
+    if request.method == 'GET':
+        return jsonify({
+            'status': 'ok',
+            'endpoint': 'register',
+            'methods': ['POST', 'GET', 'OPTIONS'],
+            'message': 'Registration endpoint is active. Submit POST with name, email, and password.'
+        }), 200
+
     data = request.get_json(silent=True) or request.form.to_dict()
     id_token = data.get('idToken', '')
     name = data.get('name', '').strip()

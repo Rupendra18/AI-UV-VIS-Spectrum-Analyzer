@@ -81,8 +81,20 @@ def init_api(load_settings_fn, save_settings_fn, load_analyses_fn, save_analysis
 
     # ── Auth ────────────────────────────────────────────────────────────────
 
-    @api_bp.route('/auth/register', methods=['POST'])
+    @api_bp.route('/auth/register', methods=['GET', 'POST', 'OPTIONS'])
+    @api_bp.route('/auth/register/', methods=['GET', 'POST', 'OPTIONS'])
+    @api_bp.route('/register', methods=['GET', 'POST', 'OPTIONS'])
+    @api_bp.route('/register/', methods=['GET', 'POST', 'OPTIONS'])
     def api_register():
+        if request.method == 'OPTIONS':
+            return jsonify({'status': 'ok'}), 200
+        if request.method == 'GET':
+            return jsonify({
+                'status': 'ok',
+                'endpoint': 'register',
+                'methods': ['POST', 'GET', 'OPTIONS'],
+                'message': 'Registration endpoint is active. Submit POST with name, email, and password.'
+            }), 200
         data = request.get_json(silent=True) or request.form.to_dict()
         name = data.get('name', '').strip()
         org  = data.get('org_name', '').strip()
@@ -140,8 +152,20 @@ def init_api(load_settings_fn, save_settings_fn, load_analyses_fn, save_analysis
         safe = {k: v for k, v in user_data.items() if k != 'password_hash'}
         return jsonify({'status': 'ok', 'uid': uid, 'token': token, 'user': safe}), 201
 
-    @api_bp.route('/auth/login', methods=['POST'])
+    @api_bp.route('/auth/login', methods=['GET', 'POST', 'OPTIONS'])
+    @api_bp.route('/auth/login/', methods=['GET', 'POST', 'OPTIONS'])
+    @api_bp.route('/login', methods=['GET', 'POST', 'OPTIONS'])
+    @api_bp.route('/login/', methods=['GET', 'POST', 'OPTIONS'])
     def api_login():
+        if request.method == 'OPTIONS':
+            return jsonify({'status': 'ok'}), 200
+        if request.method == 'GET':
+            return jsonify({
+                'status': 'ok',
+                'endpoint': 'login',
+                'methods': ['POST', 'GET', 'OPTIONS'],
+                'message': 'Login endpoint is active. Submit POST with email and password or idToken.'
+            }), 200
         data = request.get_json(silent=True) or request.form.to_dict()
         id_token = data.get('idToken', '')
         email = data.get('email', '').strip().lower()
@@ -186,13 +210,23 @@ def init_api(load_settings_fn, save_settings_fn, load_analyses_fn, save_analysis
         safe = {k: v for k, v in user.items() if k != 'password_hash'}
         return jsonify({'status': 'ok', 'uid': uid, 'token': token, 'user': safe})
 
-    @api_bp.route('/auth/logout', methods=['POST'])
+    @api_bp.route('/auth/logout', methods=['GET', 'POST', 'OPTIONS'])
+    @api_bp.route('/auth/logout/', methods=['GET', 'POST', 'OPTIONS'])
+    @api_bp.route('/logout', methods=['GET', 'POST', 'OPTIONS'])
+    @api_bp.route('/logout/', methods=['GET', 'POST', 'OPTIONS'])
     def api_logout():
         session.clear()
         return jsonify({'status': 'ok', 'message': 'Logged out'})
 
-    @api_bp.route('/auth/forgot-password', methods=['POST'])
+    @api_bp.route('/auth/forgot-password', methods=['GET', 'POST', 'OPTIONS'])
+    @api_bp.route('/auth/forgot-password/', methods=['GET', 'POST', 'OPTIONS'])
+    @api_bp.route('/forgot-password', methods=['GET', 'POST', 'OPTIONS'])
+    @api_bp.route('/forgot-password/', methods=['GET', 'POST', 'OPTIONS'])
     def api_forgot_password():
+        if request.method == 'OPTIONS':
+            return jsonify({'status': 'ok'}), 200
+        if request.method == 'GET':
+            return jsonify({'status': 'ok', 'message': 'Forgot password endpoint is active. Send POST with email.'}), 200
         data = request.get_json(silent=True) or request.form.to_dict()
         email = data.get('email', '').strip().lower()
         if not email:

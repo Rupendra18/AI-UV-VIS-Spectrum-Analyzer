@@ -16,11 +16,12 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 globally — redirect to login
+// Handle 401 globally — redirect to login (except when currently attempting to log in or authenticate)
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    const isAuthRoute = err.config?.url?.includes('/login') || err.config?.url?.includes('/register');
+    if (err.response?.status === 401 && !isAuthRoute) {
       localStorage.removeItem('uvvis_token');
       window.location.href = '/login';
     }

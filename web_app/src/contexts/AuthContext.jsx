@@ -82,14 +82,26 @@ export function AuthProvider({ children }) {
   // Local / API login (when Firebase not configured or fails)
   const loginWithAPI = async (email, password) => {
     const { default: api } = await import('../services/api');
-    const res = await api.post('/auth/login', { email, password });
-    const { uid, token: t, user: u } = res.data;
-    setToken(t);
-    localStorage.setItem('uvvis_token', t);
-    setUserProfile(u);
-    // Simulate minimal user object
-    setUser({ uid, email, displayName: u?.name || email.split('@')[0] });
-    return res.data;
+    try {
+      const res = await api.post('/auth/login', { email, password });
+      const { uid, token: t, user: u } = res.data;
+      setToken(t || 'token');
+      localStorage.setItem('uvvis_token', t || 'token');
+      setUserProfile(u);
+      setUser({ uid: uid || 'user', email, displayName: u?.name || email.split('@')[0] });
+      return res.data;
+    } catch (err) {
+      if (err.response?.status === 404 || err.response?.status === 405) {
+        const res = await api.post('/login', { email, password });
+        const { uid, token: t, user: u } = res.data;
+        setToken(t || 'token');
+        localStorage.setItem('uvvis_token', t || 'token');
+        setUserProfile(u);
+        setUser({ uid: uid || 'user', email, displayName: u?.name || email.split('@')[0] });
+        return res.data;
+      }
+      throw err;
+    }
   };
 
   const login = async (email, password) => {
